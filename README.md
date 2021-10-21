@@ -1,7 +1,7 @@
 # ABNF Match
 
-ABNF Match provides a domain specific language that facilitates the expedient
-creation of pattern matchers that mirror the logic described in IETF RFCs.
+ABNF Match provides a domain specific language to quickly create pattern
+matchers that mirror the logic described in IETF RFCs.
 
 The library contains a complete implementation of the operators described in [RFC
 5234](https://datatracker.ietf.org/doc/html/rfc5234) (Augmented BNF for Syntax Specifications: ABNF). A few macros govern the
