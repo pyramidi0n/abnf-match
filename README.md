@@ -335,35 +335,35 @@ of operators and pre-written rules.
 The DSL may be extended with [`defrule`](#defrule).
 
 Primitive operators:
-* `terminal`
-* `terminals`
-* `concatenation`
-* `alternatives`
-* `value-range-alternatives`
-* `sequence-group`
-* `variable-repetition`
-* `specific-repetition`
-* `optional-sequence`
+* [`terminal`](#terminal)
+* [`terminals`](#terminals)
+* [`concatenation`](#concatenation)
+* [`alternatives`](#alternatives)
+* [`value-range-alternatives`](#value-range-alternatives)
+* [`sequence-group`](#sequence-group)
+* [`variable-repetition`](#variable-repetition)
+* [`specific-repetition`](#specific-repetition)
+* [`optional-sequence`](#optional-sequence)
 
 Additional documentation of these operators is available in [RFC 5234, Section 3](https://datatracker.ietf.org/doc/html/rfc5234#section-3).
 
 Core rules:
-* `r-alpha`
-* `r-bit`
-* `r-char`
-* `r-cr`
-* `r-crlf`
-* `r-ctl`
-* `r-digit`
-* `r-dquote`
-* `r-hexdig`
-* `r-htab`
-* `r-lf`
-* `r-lwsp`
-* `r-octet`
-* `r-sp`
-* `r-vchar`
-* `r-wsp`
+* [`r-alpha`](#r-alpha)
+* [`r-bit`](#r-bit)
+* [`r-char`](#r-char)
+* [`r-cr`](#r-cr)
+* [`r-crlf`](#r-crlf)
+* [`r-ctl`](#r-ctl)
+* [`r-digit`](#r-digit)
+* [`r-dquote`](#r-dquote)
+* [`r-hexdig`](#r-hexdig)
+* [`r-htab`](#r-htab)
+* [`r-lf`](#r-lf)
+* [`r-lwsp`](#r-lwsp)
+* [`r-octet`](#r-octet)
+* [`r-sp`](#r-sp)
+* [`r-vchar`](#r-vchar)
+* [`r-wsp`](#r-wsp)
 
 Additional documentation of the core rules is available in [RFC 5234, Appendix B](https://datatracker.ietf.org/doc/html/rfc5234#appendix-B).
 
