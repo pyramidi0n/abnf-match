@@ -32,7 +32,7 @@ library.
 6. [Patches](#patches)
 7. [License](#license)
 
-## <a name="installation"></a>Installation
+## Installation
 
 You'll need to install [Trivial US-ASCII](https://git.sr.ht/~pyramidion/trivial-us-ascii) first.
 
@@ -58,7 +58,7 @@ your REPL, and include it as a dependency to your own projects using ASDF.
 
 At some point, I'll see about including it in [Quicklisp](https://www.quicklisp.org/beta/).
 
-## <a name="tutorial"></a>Tutorial
+## Tutorial
 
 Load the `abnf-match` package:
 
@@ -326,7 +326,7 @@ R-HTTPS-URI
 With `r-authority`, `r-path-abempty`, `r-query`, and `r-fragment` defined
 elsewhere.
 
-## <a name="reference"></a>Reference
+## Reference
 
 The core of the library's domain specific language is defined by a small group
 of operators and pre-written rules.
@@ -993,7 +993,7 @@ matched-to---either the terminal index of a successful match, or nil if it fails
 Attempts to match a whitespace character (space, tab) encoded with US-ASCII to
 the octet at index *lower* in *octets*.
 
-## <a name="performance"></a>Performance
+## Performance
 
 The library is fairly quick. Here's a trivial example. More complex logic
 can slow it down.
@@ -1038,24 +1038,24 @@ R-ALPHABET
 CL-USER> (time (dotimes (c 100000)
                  (r-alphabet *alphabet* 0 (length *alphabet*))))
 Evaluation took:
-  0.013 seconds of real time
-  0.011799 seconds of total run time (0.011799 user, 0.000000 system)
-  92.31% CPU
-  42,671,196 processor cycles
+  0.006 seconds of real time
+  0.007758 seconds of total run time (0.007758 user, 0.000000 system)
+  133.33% CPU
+  27,935,820 processor cycles
   0 bytes consed
 
 NIL
 ```
 
-## <a name="links"></a>Links
+## Links
 
 * [Repository](https://sr.ht/~pyramidion/abnf-match/)
 
-## <a name="patches"></a>Patches
+## Patches
 
 Patches are welcome.
 
-## <a name="license"></a>License
+## License
 
 ABNF Match is licensed under the GNU Affero General Public License v3.
 
