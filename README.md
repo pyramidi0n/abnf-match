@@ -258,6 +258,7 @@ R-BINARY
 
 CL-USER> (defrule r-binary*
            (variable-repetition r-binary))
+R-BINARY*
 
 CL-USER> (r-binary (make-array 5
                                :initial-contents (list +#\0+ +#\1+
