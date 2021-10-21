@@ -332,7 +332,7 @@ elsewhere.
 The core of the library's domain specific language is defined by a small group
 of operators and pre-written rules.
 
-The DSL may be extended with `defrule`.
+The DSL may be extended with [`defrule`](#defrule).
 
 Primitive operators:
 * `terminal`
