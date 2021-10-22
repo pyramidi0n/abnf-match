@@ -4,6 +4,7 @@
    :cl
    :trivial-us-ascii)
   (:export
+   :matched
    :defrule
 
    :terminal
@@ -88,7 +89,7 @@
 
 ;; ------------------------------------------------------------------------------
 
-(declaim (type fixnum +match-failure+))
+(declaim (type matched +match-failure+))
 (declaim (inline terminal))
 (declaim (inline value-range-alternatives))
 
