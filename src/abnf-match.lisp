@@ -17,6 +17,8 @@
    :specific-repetition
    :optional-sequence
 
+   :capture
+
    :r-alpha
    :r-bit
    :r-char
@@ -67,9 +69,14 @@
                              (not (boundp form))) `(funcall #',form ,octets ,lower ,upper))
                        ((listp form)
                         (let* ((name (car form))
-                               (body (cdr form))
-                               (threaded (macroexpand-1 `(thread-params ,(nconc (list name) (mapcar #'wrap-form body))))))
-                          threaded))
+                               (body (cdr form)))
+                          (if (equalp name 'capture)
+                              (let ((capture-lower (car body))
+                                    (capture-upper (cadr body))
+                                    (rule (cddr body)))
+                                (macroexpand-1 `(thread-params ,(nconc (list name capture-lower capture-upper)
+                                                                       (mapcar #'wrap-form rule)))))
+                              (macroexpand-1 `(thread-params ,(nconc (list name) (mapcar #'wrap-form body)))))))
                        (t form)))))
       (wrap-form form))))
 
@@ -224,6 +231,24 @@
                         ,upper
                         (sequence-group ,octets ,lower ,upper ,@rules)
                         :maximum 1))
+
+;; ------------------------------------------------------------------------------
+
+(defmacro capture (octets lower upper lower-captured upper-captured rule)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (declare (ignore octets))
+  (declare (ignore upper))
+  (let ((n-rule (intern (symbol-name 'n-rule)))
+        (n-rule-upper (intern (symbol-name 'n-rule-upper))))
+    `(let ((,n-rule ,rule)
+           (,n-rule-upper nil))
+       (declare (type matched ,n-rule))
+       (declare (type matched ,n-rule-upper))
+       (when ,n-rule
+         (setf ,n-rule-upper (+ ,lower ,n-rule))
+         (setf ,lower-captured ,lower)
+         (setf ,upper-captured ,n-rule-upper)
+         ,n-rule))))
 
 ;; ------------------------------------------------------------------------------
 
