@@ -186,7 +186,12 @@
 
 (defmacro variable-repetition (octets lower upper rule &key
                                                          (minimum nil)
-                                                         (maximum nil))
+                                                         (maximum nil)
+                                                         (padding 0))
+  "The padding parameter is a hack intended to work around scenarios where the
+rule subsequent to this variable-repetition is a strict subset of the rules
+contained in this variable-repetition; that way, we don't inadvertently
+match everything and end up with a dangling unmatched rule."
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (let ((min (intern (symbol-name 'min)))
         (max (intern (symbol-name 'max)))
@@ -206,15 +211,15 @@
                (,n 0))
            (declare (type matched ,n-rule))
            (declare (type matched ,n))
-           (loop for i fixnum from (if (= ,min 0) 1 ,min) to ,max
+           (loop for i fixnum from 1 to ,max
                  do (setf ,n-rule ,rule)
                     (when (not ,n-rule)
-                      (when (and (= i ,min) (> ,min 0))
+                      (when (and (<= i ,min) (> ,min 0))
                         (setf ,n ,+match-failure+))
                       (loop-finish))
                     (incf ,lower ,n-rule)
                     (incf ,n ,n-rule))
-           ,n)))))
+           (- ,n ,padding))))))
 
 (defmacro specific-repetition (octets lower upper n rule)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
