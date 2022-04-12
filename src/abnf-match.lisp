@@ -364,6 +364,6 @@
   (declare (ignore upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
-      (when (or (and (= octet +SP+)
-                     (= octet +HT+)))
+      (when (or (= octet +SP+)
+                (= octet +HT+))
         1))))
