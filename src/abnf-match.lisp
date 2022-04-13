@@ -338,6 +338,8 @@ match everything and end up with a dangling unmatched rule."
     (let ((octet (aref octets lower)))
       (when (or (and (>= octet +#\0+)
                      (<= octet +#\9+))
+                (and (>= octet +#\a+)
+                     (<= octet +#\f+))
                 (and (>= octet +#\A+)
                      (<= octet +#\F+)))
         1))))
