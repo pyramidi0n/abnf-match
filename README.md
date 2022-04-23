@@ -1,325 +1,141 @@
 # ABNF Match
 
-A domain specific language for writing parsers of grammars expressed
-in IETF ABNF. It contains a complete implementation of [RFC 5234](https://datatracker.ietf.org/doc/html/rfc5234) (Augmented BNF for Syntax Specifications: ABNF).
-
-Instead of writing bespoke, informal, error-prone parsers for various
-things defined in RFCs (email, uri, etc.) you may use this library to
-do so easily and rigorously.
-
-The pattern-matching engine at the heart of this library also runs in
-linear time and does not cons (i.e. perform dynamic memory allocation),
-so it's fast.
-
 ## Table of Contents
 
-1. [Installation](#installation)
-2. [Tutorial](#tutorial)
-3. [Reference](#reference)
-4. [Performance](#performance)
-5. [Links](#links)
-6. [Patches](#patches)
-7. [License](#license)
+1. [Overview](#overview)
+2. [Example Use Case](#example-use-case)
+3. [Installation](#installation)
+4. [Reference](#reference)
+5. [Performance](#performance)
+6. [Links](#links)
+7. [Patches](#patches)
+8. [License](#license)
+
+## Overview
+
+A domain specific language for writing parsers of grammars expressed in IETF
+ABNF. It contains a complete implementation of [RFC 5234](https://datatracker.ietf.org/doc/html/rfc5234) (Augmented BNF for Syntax Specifications: ABNF).
+
+Instead of writing bespoke, informal, error-prone parsers for various things
+defined in RFCs (email, uri, etc.) you may use this library to do so easily and
+rigorously.
+
+The pattern-matching engine at the heart of this library also runs in linear
+time and does not cons (i.e. perform dynamic memory allocation), so it's fast.
+
+## Example Use Case
+
+Great. What does any of that mean? Well, it's easier to show than tell, in this
+case. We'll write an email address validator.
+
+"Just use a regex," someone might say. That someone now has two problems.
+Validating email addresses is deceptively hard; all of the following are valid
+email addresses according to internet standards:
+
+```
+simple@example.com
+very.common@example.com
+disposable.style.email.with+symbol@example.com
+other.email-with-hyphen@example.com
+fully-qualified-domain@example.com
+user.name+tag+sorting@example.com
+x@example.com
+example-indeed@strange-example.com
+test/test@test.com
+admin@mailserver1
+example@s.example
+" "@example.org
+"john..doe"@example.org
+mailhost!username@example.org
+"very.(),:;<>[]\".VERY.\"very@\\ \"very\".unusual"@strange.example.com
+user%example.com@example.org
+user-@example.org
+postmaster@[123.123.123.123]
+postmaster@[IPv6:2001:0db8:85a3:0000:0000:8a2e:0370:7334]
+```
+
+So, regex-based validation. I would prefer not to.
+
+It turns out that the grammar for an email address is formally specified in an
+internet standard called [RFC 5321](https://www.rfc-editor.org/rfc/rfc5321.html) (Simple Mail Transfer Protocol).
+
+The internet standards published by the IETF in these RFCs all rely on the same
+language to express the grammars of all sorts of things, such as email
+addresses, URIs, and even the entire HTTP protocol. That language is called
+Augmented Backus-Naur Form, or ABNF.
+
+ANBF rigorously expresses these grammars. If you can write them in ABNF, you
+have captured the totality of all the things they might match, with no weird
+edge cases.
+
+That's what this library lets you do: express grammars in a Lispy version of
+ABNF. Then, it automatically constructs relevant pattern matchers, which makes
+writing validators and parsers simple.
+
+So we can look at ABNF like this:
+
+```
+Mailbox        = Local-part "@" ( Domain / address-literal )
+```
+
+Quickly rewrite it as this:
+
+```lisp
+(defrule r-mailbox
+    (concatenation r-local-part
+                   (terminal +#\@+)
+                   (alternatives r-domain
+                                 r-address-literal)))
+```
+
+To do things like this:
+
+```lisp
+CL-USER> (r-mailbox (trivial-us-ascii:ascii-string-code
+                      '(simple-array (unsigned-byte 8) (*))
+                      "simple@example.com")
+                    0
+                    (length "simple@example.com"))
+18
+```
+
+Or, for an invalid address:
+
+```lisp
+CL-USER> (r-mailbox (trivial-us-ascii:ascii-string-code
+                      '(simple-array (unsigned-byte 8) (*))
+                      "Abc.example.com")
+                    0
+                    (length "Abc.example.com"))
+NIL
+```
+
+There are a few missing pieces. We'd need to rewrite all of the ABNF that
+defines an email address, and not just `mailbox`. But that's the gist of it.
+A complete implementation of an email address parser using this library
+can be found [here](https://git.sr.ht/~pyramidion/email-parse).
 
 ## Installation
 
-You'll need to install [Trivial US-ASCII](https://git.sr.ht/~pyramidion/trivial-us-ascii) first.
+ABNF Match is available on [Ultralisp](https://ultralisp.org/) and easy to
+install using [Quicklisp](https://www.quicklisp.org/beta/).
 
-ABNF Match requires [ASDF](https://common-lisp.net/project/asdf/), the
-Common Lisp world's de facto standard build facility. Most Common Lisp
-implementations ship with ASDF, so chances are you don't need to install it
-yourself.
-
-You'll need to [configure ASDF to find ABNF Match](https://common-lisp.net/project/asdf/asdf/Configuring-ASDF-to-find-your-systems.html).
-
-If you're in a hurry, and run a *nix system, just do this:
-
-```bash
-$ mkdir -p ~/.local/share/common-lisp/source
-
-$ git clone https://git.sr.ht/~pyramidion/abnf-match \
-  ~/.local/share/common-lisp/source/abnf-match
-```
-
-ASDF should find the package there and make it available to your Common Lisp
-implementation. Subsequently, you will be able to `require` the package in
-your REPL, and include it as a dependency to your own projects using ASDF.
-
-At some point, I'll see about including it in [Quicklisp](https://www.quicklisp.org/beta/).
-
-## Tutorial
-
-Load the `abnf-match` package:
+Add the Ultralisp repository:
 
 ```lisp
-CL-USER> (require :abnf-match)
-NIL
-
-CL-USER> (use-package :abnf-match)
-T
+CL-USER> (ql-dist:install-dist "http://dist.ultralisp.org/")
 ```
 
-Let's define a rule and see how this works.
+Install ABNF Match:
 
 ```lisp
-CL-USER> (defrule r-null
-           (terminal trivial-us-ascii:+NUL+))
-R-NULL
-
-CL-USER> (r-null (make-array 10
-                             :initial-element trivial-us-ascii:+NUL+
-                             :element-type '(unsigned-byte 8))
-                             0
-                             10)
-1
-
-CL-USER> (r-null (make-array 10
-                             :initial-element #x01
-                             :element-type '(unsigned-byte 8))
-                             0
-                             10)
-NIL
+CL-USER> (ql:quickload :abnf-match)
 ```
-
-What goes on here? `r-null` is our new rule, which matches a single `terminal`:
-`NUL`, as defined by US-ASCII.
-
-When we call a rule, we provide it an array of octets, a lower index, and an
-upper index. It then attempts to match accordingly, starting at the lower
-index and continuing until it reaches the upper index.
-
-A successful match returns the terminal index of the match. A failure returns
-`nil`. Thus, rules can be chained together: the terminal index of one rule
-becomes the lower index of the next.
-
-We see that `r-null` successfully returns `1` after matching the first octet
-of a `NUL` array. Likewise, it returns `nil` when it fails to match the
-second array where every element is `1`.
-
-Let's keep going.
-
-```lisp
-CL-USER> (defrule r-null-10x
-           (concatenation r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null
-                          r-null))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element trivial-us-ascii:+NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-```
-
-So, `concatenation` does what we expect. We can compose symbols naming rules
-inside of other rules. Alternatively, we could have written:
-
-```lisp
-CL-USER> (defrule r-null-10x
-           (concatenation (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element trivial-us-ascii:+NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-```
-
-Or mixed and matched:
-
-```lisp
-CL-USER> (defrule r-null-10x
-           (concatenation (terminal trivial-us-ascii:+NUL+)
-                          r-null
-                          (terminal trivial-us-ascii:+NUL+)
-                          r-null
-                          (terminal trivial-us-ascii:+NUL+)
-                          r-null
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)
-                          (terminal trivial-us-ascii:+NUL+)))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element trivial-us-ascii:+NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-```
-
-Writing long concatenations of terminal values is annoying, though. There's
-better syntax for it:
-
-```lisp
-CL-USER> (use-package :trivial-us-ascii)
-T
-
-CL-USER> (defrule r-null-10x
-           (terminals +NUL+ +NUL+ +NUL+ +NUL+ +NUL+
-                      +NUL+ +NUL+ +NUL+ +NUL+ +NUL+))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element +NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-```
-
-We can clean it up even further.
-
-```lisp
-CL-USER> (defrule r-null-10x
-           (specific-repetition 10 (terminal +NUL+)))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element +NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-
-CL-USER> (defrule r-null-10x
-           (specific-repetition 10 r-null))
-R-NULL-10X
-
-CL-USER> (r-null-10x (make-array 10
-                                 :initial-element +NUL+
-                                 :element-type '(unsigned-byte 8))
-                                 0
-                                 10)
-10
-```
-
-Not bad. What about matching against arrays of variable length?
-
-```lisp
-CL-USER> (defrule r-null*
-           (variable-repetition r-null))
-R-NULL*
-
-CL-USER> (r-null* (make-array 10
-                              :initial-element +NUL+
-                              :element-type '(unsigned-byte 8))
-                              0
-                              10)
-10
-
-CL-USER> (r-null* (make-array 5
-                              :initial-element +NUL+
-                              :element-type '(unsigned-byte 8))
-                              0
-                              5)
-5
-```
-
-How about some binary characters - zero or one?
-
-```lisp
-CL-USER> (defrule r-binary
-           (alternatives (terminal +#\0+)
-                         (terminal +#\1+)))
-R-BINARY
-
-CL-USER> (defrule r-binary*
-           (variable-repetition r-binary))
-R-BINARY*
-
-CL-USER> (r-binary (make-array 5
-                               :initial-contents (list +#\0+ +#\1+
-                                                       +#\0+ +#\1+
-                                                       +#\0+)
-                               :element-type '(unsigned-byte 8))
-                               0
-                               5)
-1
-
-CL-USER> (r-binary* (make-array 5
-                                :initial-contents (list +#\0+ +#\1+
-                                                        +#\0+ +#\1+
-                                                        +#\0+)
-                                :element-type '(unsigned-byte 8))
-                                0
-                                5)
-5
-```
-
-Binary characters padded by `NUL`?
-
-```lisp
-CL-USER> (defrule r-binary*-padded
-           (concatenation (optional-sequence (terminal +NUL+))
-                          r-binary*
-                          (optional-sequence (terminal +NUL+))))
-R-BINARY*-PADDED
-
-CL-USER> (r-binary*-padded (make-array 10
-                                       :initial-contents (list +NUL+ +NUL+
-                                                               +NUL+ +NUL+
-                                                               +#\0+ +#\1+
-                                                               +#\0+ +#\1+
-                                                               +#\0+ +NUL+)
-                                       :element-type '(unsigned-byte 8))
-                                       0
-                                       10)
-10
-```
-
-As you can see, it's fairly easy to begin constructing more complex rules.
-
-The syntax is more readable than, say, regular expressions - and it also
-has a 1-1 relation with the ABNF used in IETF RFCs, making it easy and safe
-to directly translate their rules and forms into Common Lisp.
-
-For example:
-
-```
-https-URI = "https:" "//" authority path-abempty [ "?" query ] [ "#" fragment ]
-```
-
-```lisp
-CL-USER> (defrule r-https-uri
-           (concatenation (terminals +#\h+ +#\t+ +#\t+ +#\p+ +#\s+ +#\:+ +#\/+ +#\/+)
-                          r-authority
-                          r-path-abempty
-                          (optional-sequence (terminal +#\?+)
-                                             r-query)
-                          (optional-sequence (terminal +#\#+)
-                                             r-fragment)))
-R-HTTPS-URI
-```
-
-With `r-authority`, `r-path-abempty`, `r-query`, and `r-fragment` defined
-elsewhere.
 
 ## Reference
 
-The core of the library's domain specific language is defined by a small group
-of operators and pre-written rules.
+The library's domain specific language is defined by a small group of operators
+and pre-written rules.
 
 The DSL may be extended with [`defrule`](#defrule).
 
@@ -985,53 +801,55 @@ the octet at index *lower* in *octets*.
 
 ## Performance
 
-The library is fairly quick. Here's a trivial example. More complex logic
-can slow it down.
+The library is fairly quick, though more complex logic can slow it down.
 
 ```lisp
+CL-USER> (require :abnf-match) (use-package :abnf-match) (use-package :trivial-us-ascii)
+T
+
 CL-USER> (defparameter *alphabet*
                        (make-array 52
-                                   :initial-contents (list trivial-us-ascii:+#\A+ trivial-us-ascii:+#\B+ trivial-us-ascii:+#\C+ trivial-us-ascii:+#\D+
-                                                           trivial-us-ascii:+#\E+ trivial-us-ascii:+#\F+ trivial-us-ascii:+#\G+ trivial-us-ascii:+#\H+
-                                                           trivial-us-ascii:+#\I+ trivial-us-ascii:+#\J+ trivial-us-ascii:+#\K+ trivial-us-ascii:+#\L+
-                                                           trivial-us-ascii:+#\M+ trivial-us-ascii:+#\N+ trivial-us-ascii:+#\O+ trivial-us-ascii:+#\P+
-                                                           trivial-us-ascii:+#\Q+ trivial-us-ascii:+#\R+ trivial-us-ascii:+#\S+ trivial-us-ascii:+#\T+
-                                                           trivial-us-ascii:+#\U+ trivial-us-ascii:+#\V+ trivial-us-ascii:+#\W+ trivial-us-ascii:+#\X+
-                                                           trivial-us-ascii:+#\Y+ trivial-us-ascii:+#\Z+
-                                                           trivial-us-ascii:+#\a+ trivial-us-ascii:+#\b+ trivial-us-ascii:+#\c+ trivial-us-ascii:+#\d+
-                                                           trivial-us-ascii:+#\e+ trivial-us-ascii:+#\f+ trivial-us-ascii:+#\g+ trivial-us-ascii:+#\h+
-                                                           trivial-us-ascii:+#\i+ trivial-us-ascii:+#\j+ trivial-us-ascii:+#\k+ trivial-us-ascii:+#\l+
-                                                           trivial-us-ascii:+#\m+ trivial-us-ascii:+#\n+ trivial-us-ascii:+#\o+ trivial-us-ascii:+#\p+
-                                                           trivial-us-ascii:+#\q+ trivial-us-ascii:+#\r+ trivial-us-ascii:+#\s+ trivial-us-ascii:+#\t+
-                                                           trivial-us-ascii:+#\u+ trivial-us-ascii:+#\v+ trivial-us-ascii:+#\w+ trivial-us-ascii:+#\x+
-                                                           trivial-us-ascii:+#\y+ trivial-us-ascii:+#\z+)
+                                   :initial-contents (list +#\A+ +#\B+ +#\C+ +#\D+
+                                                           +#\E+ +#\F+ +#\G+ +#\H+
+                                                           +#\I+ +#\J+ +#\K+ +#\L+
+                                                           +#\M+ +#\N+ +#\O+ +#\P+
+                                                           +#\Q+ +#\R+ +#\S+ +#\T+
+                                                           +#\U+ +#\V+ +#\W+ +#\X+
+                                                           +#\Y+ +#\Z+
+                                                           +#\a+ +#\b+ +#\c+ +#\d+
+                                                           +#\e+ +#\f+ +#\g+ +#\h+
+                                                           +#\i+ +#\j+ +#\k+ +#\l+
+                                                           +#\m+ +#\n+ +#\o+ +#\p+
+                                                           +#\q+ +#\r+ +#\s+ +#\t+
+                                                           +#\u+ +#\v+ +#\w+ +#\x+
+                                                           +#\y+ +#\z+)
                                    :element-type '(unsigned-byte 8)))
 *ALPHABET*
 
 CL-USER> (defrule r-alphabet
-           (terminals trivial-us-ascii:+#\A+ trivial-us-ascii:+#\B+ trivial-us-ascii:+#\C+ trivial-us-ascii:+#\D+
-                      trivial-us-ascii:+#\E+ trivial-us-ascii:+#\F+ trivial-us-ascii:+#\G+ trivial-us-ascii:+#\H+
-                      trivial-us-ascii:+#\I+ trivial-us-ascii:+#\J+ trivial-us-ascii:+#\K+ trivial-us-ascii:+#\L+
-                      trivial-us-ascii:+#\M+ trivial-us-ascii:+#\N+ trivial-us-ascii:+#\O+ trivial-us-ascii:+#\P+
-                      trivial-us-ascii:+#\Q+ trivial-us-ascii:+#\R+ trivial-us-ascii:+#\S+ trivial-us-ascii:+#\T+
-                      trivial-us-ascii:+#\U+ trivial-us-ascii:+#\V+ trivial-us-ascii:+#\W+ trivial-us-ascii:+#\X+
-                      trivial-us-ascii:+#\Y+ trivial-us-ascii:+#\Z+
-                      trivial-us-ascii:+#\a+ trivial-us-ascii:+#\b+ trivial-us-ascii:+#\c+ trivial-us-ascii:+#\d+
-                      trivial-us-ascii:+#\e+ trivial-us-ascii:+#\f+ trivial-us-ascii:+#\g+ trivial-us-ascii:+#\h+
-                      trivial-us-ascii:+#\i+ trivial-us-ascii:+#\j+ trivial-us-ascii:+#\k+ trivial-us-ascii:+#\l+
-                      trivial-us-ascii:+#\m+ trivial-us-ascii:+#\n+ trivial-us-ascii:+#\o+ trivial-us-ascii:+#\p+
-                      trivial-us-ascii:+#\q+ trivial-us-ascii:+#\r+ trivial-us-ascii:+#\s+ trivial-us-ascii:+#\t+
-                      trivial-us-ascii:+#\u+ trivial-us-ascii:+#\v+ trivial-us-ascii:+#\w+ trivial-us-ascii:+#\x+
-                      trivial-us-ascii:+#\y+ trivial-us-ascii:+#\z+))
+             (terminals +#\A+ +#\B+ +#\C+ +#\D+
+                        +#\E+ +#\F+ +#\G+ +#\H+
+                        +#\I+ +#\J+ +#\K+ +#\L+
+                        +#\M+ +#\N+ +#\O+ +#\P+
+                        +#\Q+ +#\R+ +#\S+ +#\T+
+                        +#\U+ +#\V+ +#\W+ +#\X+
+                        +#\Y+ +#\Z+
+                        +#\a+ +#\b+ +#\c+ +#\d+
+                        +#\e+ +#\f+ +#\g+ +#\h+
+                        +#\i+ +#\j+ +#\k+ +#\l+
+                        +#\m+ +#\n+ +#\o+ +#\p+
+                        +#\q+ +#\r+ +#\s+ +#\t+
+                        +#\u+ +#\v+ +#\w+ +#\x+
+                        +#\y+ +#\z+))
 R-ALPHABET
 
 CL-USER> (time (dotimes (c 100000)
                  (r-alphabet *alphabet* 0 (length *alphabet*))))
 Evaluation took:
-  0.006 seconds of real time
-  0.007758 seconds of total run time (0.007758 user, 0.000000 system)
-  133.33% CPU
-  27,935,820 processor cycles
+  0.004 seconds of real time
+  0.004721 seconds of total run time (0.004628 user, 0.000093 system)
+  125.00% CPU
+  16,047,490 processor cycles
   0 bytes consed
 
 NIL
