@@ -1,5 +1,7 @@
 # ABNF Match
 
+A DSL for writing parsers of grammars expressed in IETF ABNF.
+
 ## Table of Contents
 
 1. [Overview](#overview)
