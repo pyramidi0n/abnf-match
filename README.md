@@ -1061,6 +1061,6 @@ Patches are welcome.
 
 ## License
 
-ABNF Match is licensed under the GNU Affero General Public License v3.
+ABNF Match is licensed under the two-clause BSD license.
 
-See LICENSE and AGPLv3.
+See LICENSE.
