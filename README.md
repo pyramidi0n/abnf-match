@@ -1,29 +1,15 @@
 # ABNF Match
 
-ABNF Match provides a domain specific language to quickly create pattern
-matchers that mirror the logic described in IETF RFCs.
+A domain specific language for writing parsers of grammars expressed
+in IETF ABNF. It contains a complete implementation of [RFC 5234](https://datatracker.ietf.org/doc/html/rfc5234) (Augmented BNF for Syntax Specifications: ABNF).
 
-Note that this is alpha quality software, and its interface is still being
-developed.
+Instead of writing bespoke, informal, error-prone parsers for various
+things defined in RFCs (email, uri, etc.) you may use this library to
+do so easily and rigorously.
 
-The library contains a complete implementation of the operators described in [RFC
-5234](https://datatracker.ietf.org/doc/html/rfc5234) (Augmented BNF for Syntax Specifications: ABNF). A few macros govern the
-composition of these operators into the domain specific language.
-
-A function defined by the DSL is called a 'rule', and operates on an octet
-sequence. When called, a rule attempts to match the pattern dictated by its
-internal logic against the sequence. Rules may be composed into more complex
-rules.
-
-The DSL is powerful enough to declare rules that completely and rigorously match
-the syntax of entire RFCs. Writing syntax validators for things like URIs, HTTP
-messages, and so forth is easy with this library.
-
-It's also fairly quick, running in linear time, with no consing (dynamic memory
-allocation). Macros and inlining are employed to negate function call overhead.
-
-ABNF Match obeys the character encoding defined by the [Trivial US-ASCII](https://git.sr.ht/~pyramidion/trivial-us-ascii)
-library.
+The pattern-matching engine at the heart of this library also runs in
+linear time and does not cons (i.e. perform dynamic memory allocation),
+so it's fast.
 
 ## Table of Contents
 
