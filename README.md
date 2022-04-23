@@ -117,7 +117,7 @@ can be found [here](https://git.sr.ht/~pyramidion/email-parse).
 
 ## Installation
 
-ABNF Match is available on [Ultralisp](https://ultralisp.org/) and easy to
+ABNF Match is available on [Ultralisp](https://ultralisp.org/) and is easy to
 install using [Quicklisp](https://www.quicklisp.org/beta/).
 
 Add the Ultralisp repository:
@@ -308,7 +308,7 @@ Within the *body* of a `defrule`, `variable-repetition` is used as follows:
 
 ```lisp
 (defrule rule-name
-  (variable-repetition form &key minimum maximum))
+  (variable-repetition form &key minimum maximum padding))
 ```
 
 Where `form` is always either the invocation of another primitive or
@@ -329,6 +329,13 @@ specify:
 
 The default value of `minimum` is `0`. The default value of `maximum` is
 the number of octets remaining before the `upper` bound is reached.
+
+The keyword argument `padding` tells the rule to, after matching `n` octets
+and preparing to return `n`, instead return `n - padding`. As rules are matched
+linearly, this is useful for breaking out of a deceptive match where a pattern
+of length `n` is immediately followed by a strict subset of that pattern of
+length `padding`. By returning `n - padding`, the next rule is allowed to match
+against that subset.
 
 ### specific-repetition
 
@@ -366,6 +373,27 @@ or a symbol naming another `rule`.
 Because `optional-sequence` is optional, `forms` does not need to match at all
 for it to succeed. Likewise, `forms`, as a group, will never match more than
 once.
+
+### capture
+
+Within the *body* of a `defrule`, `capture` is used as follows:
+
+```lisp
+(defrule rule-name
+  (capture other-rule-lower
+           other-rule-upper
+           r-other-rule))
+```
+
+Where `r-other-rule` is another rule.
+
+The `capture` block automatically stores the index of the first octet matched
+by `r-other-rule` in `other-rule-lower` and the index of the last octet matched
+by `r-other-rule` in `other-rule-upper`.
+
+Using `capture` allows us to extract particular pieces of a composite rule for
+subsequent inspection. For example, we might `capture` the `local-part` and
+`domain` of a given `mailbox`, as per the example use case above.
 
 ### r-alpha
 
