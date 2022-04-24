@@ -151,6 +151,7 @@ Primitive operators:
 * [`variable-repetition`](#variable-repetition)
 * [`specific-repetition`](#specific-repetition)
 * [`optional-sequence`](#optional-sequence)
+* [`capture`](#capture)
 
 Additional documentation of these operators is available in [RFC 5234, Section 3](https://datatracker.ietf.org/doc/html/rfc5234#section-3).
 
