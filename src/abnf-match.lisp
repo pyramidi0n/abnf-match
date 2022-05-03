@@ -157,9 +157,9 @@
   (declare (type symbol lower))
   (declare (type symbol upper))
   (declare (type list rules))
-  (declare (ignore octets))
-  (declare (ignore lower))
-  (declare (ignore upper))
+  (declare (ignorable octets))
+  (declare (ignorable lower))
+  (declare (ignorable upper))
   `(or ,@rules))
 
 (defun value-range-alternatives (octets lower upper minimum maximum)
@@ -169,7 +169,7 @@
   (declare (type fixnum upper))
   (declare (type (unsigned-byte 8) minimum))
   (declare (type (unsigned-byte 8) maximum))
-  (declare (ignore upper))
+  (declare (ignorable upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
       (when (and (>= octet minimum)
@@ -241,8 +241,8 @@ match everything and end up with a dangling unmatched rule."
 
 (defmacro capture (octets lower upper lower-captured upper-captured rule)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (declare (ignore octets))
-  (declare (ignore upper))
+  (declare (ignorable octets))
+  (declare (ignorable upper))
   (let ((n-rule (intern (symbol-name 'n-rule)))
         (n-rule-upper (intern (symbol-name 'n-rule-upper))))
     `(let ((,n-rule ,rule)
@@ -261,25 +261,24 @@ match everything and end up with a dangling unmatched rule."
 (declaim (inline r-bit))
 (declaim (inline r-char))
 (declaim (inline r-cr))
+(declaim (inline r-lf))
 (declaim (inline r-crlf))
 (declaim (inline r-ctl))
 (declaim (inline r-digit))
 (declaim (inline r-dquote))
 (declaim (inline r-hexdig))
 (declaim (inline r-htab))
-(declaim (inline r-lf))
+(declaim (inline r-wsp))
 (declaim (inline r-lwsp))
 (declaim (inline r-octet))
 (declaim (inline r-sp))
 (declaim (inline r-vchar))
-(declaim (inline r-wsp))
 
 (defun r-alpha (octets lower upper)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (declare (type (simple-array (unsigned-byte 8) (*)) octets))
   (declare (type fixnum lower))
   (declare (type fixnum upper))
-  (declare (ignore upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
       (when (or (and (>= octet +#\A+)
@@ -293,7 +292,6 @@ match everything and end up with a dangling unmatched rule."
   (declare (type (simple-array (unsigned-byte 8) (*)) octets))
   (declare (type fixnum lower))
   (declare (type fixnum upper))
-  (declare (ignore upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
       (when (or (= octet +#\0+)
@@ -306,6 +304,9 @@ match everything and end up with a dangling unmatched rule."
 (defrule r-cr
     (terminal +CR+))
 
+(defrule r-lf
+    (terminal +LF+))
+
 (defrule r-crlf
     (concatenation r-cr r-lf))
 
@@ -314,7 +315,6 @@ match everything and end up with a dangling unmatched rule."
   (declare (type (simple-array (unsigned-byte 8) (*)) octets))
   (declare (type fixnum lower))
   (declare (type fixnum upper))
-  (declare (ignore upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
       (when (or (and (>= octet +NUL+)
@@ -333,7 +333,6 @@ match everything and end up with a dangling unmatched rule."
   (declare (type (simple-array (unsigned-byte 8) (*)) octets))
   (declare (type fixnum lower))
   (declare (type fixnum upper))
-  (declare (ignore upper))
   (when (< lower upper)
     (let ((octet (aref octets lower)))
       (when (or (and (>= octet +#\0+)
@@ -347,8 +346,16 @@ match everything and end up with a dangling unmatched rule."
 (defrule r-htab
     (terminal +HT+))
 
-(defrule r-lf
-    (terminal +LF+))
+(defun r-wsp (octets lower upper)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (declare (type (simple-array (unsigned-byte 8) (*)) octets))
+  (declare (type fixnum lower))
+  (declare (type fixnum upper))
+  (when (< lower upper)
+    (let ((octet (aref octets lower)))
+      (when (or (= octet +SP+)
+                (= octet +HT+))
+        1))))
 
 (defrule r-lwsp
     (variable-repetition (alternatives r-wsp
@@ -362,15 +369,3 @@ match everything and end up with a dangling unmatched rule."
 
 (defrule r-vchar
     (value-range-alternatives +#\!+ +#\~+))
-
-(defun r-wsp (octets lower upper)
-  (declare (optimize (speed 3) (debug 0) (safety 0)))
-  (declare (type (simple-array (unsigned-byte 8) (*)) octets))
-  (declare (type fixnum lower))
-  (declare (type fixnum upper))
-  (declare (ignore upper))
-  (when (< lower upper)
-    (let ((octet (aref octets lower)))
-      (when (or (= octet +SP+)
-                (= octet +HT+))
-        1))))
