@@ -66,7 +66,8 @@
                (when form
                  (cond ((and (symbolp form)
                              (not (keywordp form))
-                             (not (boundp form))) `(funcall #',form ,octets ,lower ,upper))
+                             (not (boundp form)))
+                        `(funcall #',form ,octets ,lower ,upper))
                        ((listp form)
                         (let* ((name (car form))
                                (body (cdr form)))
@@ -109,7 +110,8 @@
   (declare (type fixnum upper))
   (declare (type (unsigned-byte 8) terminal))
   (when (and (< lower upper)
-             (= (aref octets lower) terminal)) 1))
+             (= (aref octets lower) terminal))
+    1))
 
 (defmacro terminals (octets lower upper &rest terminals)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
