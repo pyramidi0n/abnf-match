@@ -6,6 +6,7 @@
   (:export
    :matched
    :defrule
+   :letrules
 
    :terminal
    :terminals
@@ -94,6 +95,28 @@
        ,@(mapcar (lambda (form)
                    (macroexpand-1 `(wrap-form ,form)))
                  body))))
+
+(defmacro letrules-rule (rule-def)
+  (let* ((rule-name (car rule-def))
+         (rule-body (cdr rule-def))
+         (octets (intern (symbol-name 'octets)))
+         (lower (intern (symbol-name 'lower)))
+         (upper (intern (symbol-name 'upper)))
+         (rule-lambda-list (list octets lower upper)))
+    `(,rule-name ,rule-lambda-list
+                 (declare (optimize (speed 3) (debug 0) (safety 0)))
+                 (declare (type (simple-array (unsigned-byte 8) (*)) ,octets))
+                 (declare (type fixnum ,lower))
+                 (declare (type fixnum ,upper))
+                 ,@(mapcar (lambda (form)
+                             (macroexpand-1 `(wrap-form ,form)))
+                           rule-body))))
+
+(defmacro letrules (rule-defs &rest body)
+  `(labels ,(mapcar (lambda (rule-def)
+                      (macroexpand-1 `(letrules-rule ,rule-def)))
+             rule-defs)
+     ,@body))
 
 ;; ------------------------------------------------------------------------------
 
